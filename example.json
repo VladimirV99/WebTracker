@@ -1,0 +1,33 @@
+{
+	"login": [
+		{
+			"id": "example_login",
+			"steps": [
+				{ "command": "verify_ssl", "param": "false" },
+				{ "command": "get", "param": "https://www.example.com/login.php"},
+				{ "command": "select_form", "param": "form" },
+				{ "command": "override_payload", "param": {
+						"username": "admin",
+						"password": "pass"
+					}
+				},
+				{ "command": "post", "param": "https://www.example.com/login.php" }
+			],
+			"verify_login": "Login Failed"
+		}
+	],
+	"sites":[
+		{
+			"id": "example",
+			"requires": "example_login",
+			"verify_ssl": "false",
+			"remove_ids": [
+				"id_to_remove"
+			],
+			"remove_classes": [
+				"class_to_remove"
+			],
+			"url": "https://www.example.com/dashboard.php"
+		}
+	]
+}
