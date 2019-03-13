@@ -8,12 +8,13 @@ import json
 
 
 class WebTracker:
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
-    session = None
-    hashes = {}
-    log_file_name = "log.txt"
 
     def __init__(self):
+        self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
+        self.session = None
+        self.hashes = {}
+        self.log_file_name = "log.txt"
+
         if os.path.isdir("track"):
             for file in os.listdir("track"):
                 if file.endswith(".txt"):
@@ -210,9 +211,6 @@ class WebTracker:
             else:
                 self.hashes[site_id] = new_hash
                 self.write_track_file(site_id, res)
-
-            # print(body.prettify())
-            # print(res)
         except requests.exceptions.RequestException:
             print("Request Error")
             os._exit(-1)

@@ -5,7 +5,7 @@ import webtrack
 
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-check_time = 15*60
+check_time = 15*60  # 15 Minutes
 tracker = webtrack.tracker()
 
 
