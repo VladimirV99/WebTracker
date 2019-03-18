@@ -130,10 +130,10 @@ class WebTracker:
                         else:
                             is_logged_in[login_id] = True
                     except KeyError:
-                        print("Missing key for login")
+                        self.log("Missing key for login, skipping")
                         continue
                     except requests.exceptions.SSLError:
-                        print("SSLError, stopping")
+                        self.log("SSLError, stopping")
                         os._exit(-1)
                 sites = json_file["sites"]
                 for site in sites:
@@ -141,7 +141,7 @@ class WebTracker:
                         site_id = site["id"]
                         if site.get("require"):
                             if not is_logged_in[site["requires"].strip()]:
-                                print("Missing required login '" + site["requires"].strip() + "' for " + site_id)
+                                self.log("Missing required login '" + site["requires"].strip() + "' for " + site_id)
                                 continue
                         url = site["url"]
                         select_element = 'body'
@@ -163,16 +163,16 @@ class WebTracker:
                             verify = False
                         self.track(site_id, url, select_element, select_attrs, remove_ids, remove_classes, verify)
                     except KeyError:
-                        print("Missing key")
+                        self.log("Missing key, skipping")
                         continue
                     except requests.exceptions.SSLError:
-                        print("SSLError, stopping")
+                        self.log("SSLError, stopping")
                         os._exit(-1)
         except FileNotFoundError:
-            print("File Not Found: " + filename)
+            self.log("File Not Found: " + filename)
             os._exit(-1)
         except json.JSONDecodeError:
-            print("Malformed JSON File " + filename)
+            self.log("Malformed JSON File " + filename)
             os._exit(-1)
 
     def write_track_file(self, site_id, data):
@@ -214,7 +214,7 @@ class WebTracker:
                 self.hashes[site_id] = new_hash
                 self.write_track_file(site_id, res)
         except requests.exceptions.RequestException:
-            print("Request Error")
+            self.log("Request Error")
             os._exit(-1)
 
 
