@@ -13,32 +13,38 @@ class WebTracker:
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
         self.session = None
         self.hashes = {}
+        self.track_path = "track"
+        self.log_path = "logs"
         self.log_file_name = "log.txt"
 
-        if os.path.isdir("track"):
-            for file in os.listdir("track"):
+        if os.path.isdir(self.track_path):
+            for file in os.listdir(self.track_path):
                 if file.endswith(".txt"):
                     self.hashes[os.path.splitext(os.path.basename(file))[0]] = self.get_hash_for_file(file)
         else:
-            os.mkdir("track")
-        if not os.path.isdir("logs"):
-            os.mkdir("logs")
+            os.mkdir(self.track_path)
+
+        if not os.path.isdir(self.log_path):
+            os.mkdir(self.log_path)
         i = 1
-        log_file_base_name = "logs/log-" + time.strftime("%Y-%m-%d", time.localtime()) + "-"
+        self.log_file_base_name = os.path.join(self.log_path, self.log_file_name + "-" + time.strftime("%Y-%m-%d", time.localtime()) + "-")
         while True:
-            log_file_name = log_file_base_name + str(i) + ".txt"
-            if not os.path.exists(log_file_name):
-                self.log_file_name = log_file_name
+            if not os.path.exists(self.log_file_base_name + str(i) + ".txt"):
+                self.log_file_name = self.log_file_base_name + str(i) + ".txt"
                 break
             i = i + 1
-        print("Tracker Initialized")
-        with open(self.log_file_name, "a") as log_file:
-            log_file.write(time.strftime("[%H:%M:%S] ", time.localtime()) + "Tracker Initialized\n")
 
-    @staticmethod
-    def get_hash_for_file(filename):
+        self.log("Tracker Initialized")
+
+    def log(self, message):
+        with open(self.log_file_name, "a") as log_file:
+            current_time = time.strftime("[%H:%M:%S]", time.localtime())
+            log_file.write(current_time + message + "\n")
+        print(message)
+
+    def get_hash_for_file(self, filename):
         hasher = hashlib.md5()
-        with open(os.path.join("track", filename), 'rb') as file:
+        with open(os.path.join(self.track_path, filename), 'rb') as file:
             buf = file.read()
             hasher.update(buf)
         return hasher.hexdigest()
@@ -169,9 +175,8 @@ class WebTracker:
             print("Malformed JSON File " + filename)
             os._exit(-1)
 
-    @staticmethod
-    def write_track_file(site_id, data):
-        file = open(os.path.join("track", site_id + ".txt"), "w")
+    def write_track_file(self, site_id, data):
+        file = open(os.path.join(self.track_path, site_id + ".txt"), "w")
         file.write(data)
         file.close()
 
@@ -202,10 +207,7 @@ class WebTracker:
 
             if site_id in self.hashes:
                 if self.hashes[site_id] != new_hash:
-                    with open(self.log_file_name, "a") as log_file:
-                        current_time = time.strftime("[%H:%M:%S]", time.localtime())
-                        log_file.write(current_time + " '" + site_id + "' has changed\n")
-                    print("'" + site_id + "' has changed")
+                    self.log("'" + site_id + "' has changed")
                     self.hashes[site_id] = new_hash
                     self.write_track_file(site_id, res)
             else:
