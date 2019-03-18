@@ -15,7 +15,7 @@ class WebTracker:
         self.hashes = {}
         self.track_path = "track"
         self.log_path = "logs"
-        self.log_file_name = "log.txt"
+        self.log_file_name = "log"
 
         if os.path.isdir(self.track_path):
             for file in os.listdir(self.track_path):
