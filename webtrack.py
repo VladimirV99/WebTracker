@@ -82,7 +82,7 @@ class WebTracker:
 
     @staticmethod
     def decode(value, dictionary):
-        rep = re.findall('\[(.*?)\]', value)
+        rep = re.findall('\\[(.*?)\\]', value)
         for item in rep:
             if dictionary.get(item):
                 value = value.replace("["+item+"]", dictionary[item])
