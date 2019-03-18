@@ -5,6 +5,7 @@ import os
 import hashlib
 import time
 import json
+import difflib
 
 
 class WebTracker:
@@ -207,7 +208,15 @@ class WebTracker:
 
             if site_id in self.hashes:
                 if self.hashes[site_id] != new_hash:
-                    self.log("'" + site_id + "' has changed")
+                    track_file = open(os.path.join(self.track_path, site_id + ".txt"))
+
+                    message = "'" + site_id + "' has changed\n"
+                    for line in difflib.unified_diff(res.splitlines(keepends=True), track_file.readlines(), n=2):
+                        message = message + line
+                    message = message[:-1]  # Remove final newline
+
+                    self.log(message)
+
                     self.hashes[site_id] = new_hash
                     self.write_track_file(site_id, res)
             else:
