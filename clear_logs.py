@@ -2,10 +2,12 @@ import os
 
 
 def main():
-    if os.path.exists("log"):
-        for file in os.listdir("log"):
+    log_path = "logs"
+
+    if os.path.exists(log_path):
+        for file in os.listdir(log_path):
             if file.endswith(".txt"):
-                os.remove("log/" + file)
+                os.remove(os.path.join(log_path, file))
 
 
 main()
