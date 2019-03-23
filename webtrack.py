@@ -12,13 +12,14 @@ import utils
 
 class WebTracker:
 
-    def __init__(self, log_path="logs", log_file_name="log", track_path="track"):
+    def __init__(self, log_path="logs", log_file_name="log", track_path="track", email_notify=False):
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
         self.session = None
         self.hashes = {}
         self.track_path = track_path
         self.log_path = log_path
         self.log_file_name = log_file_name
+        self.email_notify = email_notify
 
         if os.path.isdir(self.track_path):
             for file in os.listdir(self.track_path):
@@ -77,9 +78,16 @@ class WebTracker:
 
     def check_json(self, filename):
         try:
+            diffs = {}
             with open(filename) as file:
                 is_logged_in = {}
                 json_file = json.load(file)
+
+                mails = []
+                if self.email_notify:
+                    if "mails" in json_file:
+                        mails = json_file["mails"]
+
                 logins = json_file["login"]
                 for login in logins:
                     try:
@@ -142,13 +150,19 @@ class WebTracker:
                             verify = True
                         else:
                             verify = False
-                        self.track(site_id, url, select_element, select_attrs, remove_ids, remove_classes, verify)
+
+                        diff = self.track(site_id, url, select_element, select_attrs, remove_ids, remove_classes, verify)
+                        if diff is not None:
+                            diffs[site_id] = diff
+
                     except KeyError:
                         self.log("Missing key, skipping")
                         continue
                     except requests.exceptions.SSLError:
                         self.log("SSLError, stopping")
                         os._exit(-1)
+            if self.email_notify:
+                utils.notify(mails, diffs)
         except FileNotFoundError:
             self.log("File Not Found: " + filename)
             os._exit(-1)
@@ -191,17 +205,22 @@ class WebTracker:
                     track_file = open(os.path.join(self.track_path, site_id + ".txt"))
 
                     message = "'" + site_id + "' has changed\n"
+                    diff = ""
                     for line in difflib.unified_diff(track_file.readlines(), res.splitlines(keepends=True), n=2):
-                        message = message + line
-                    message = message[:-1]  # Remove final newline
+                        diff = diff + line
+                    diff = diff[:-1]  # Remove final newline
+                    message = message + diff
 
                     self.log(message)
 
                     self.hashes[site_id] = new_hash
                     self.write_track_file(site_id, res)
+
+                    return diff
             else:
                 self.hashes[site_id] = new_hash
                 self.write_track_file(site_id, res)
         except requests.exceptions.RequestException:
             self.log("Request Error")
             os._exit(-1)
+        return None
