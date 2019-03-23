@@ -10,13 +10,13 @@ import difflib
 
 class WebTracker:
 
-    def __init__(self):
+    def __init__(self, log_path="logs", log_file_name="log", track_path="track"):
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
         self.session = None
         self.hashes = {}
-        self.track_path = "track"
-        self.log_path = "logs"
-        self.log_file_name = "log"
+        self.track_path = track_path
+        self.log_path = log_path
+        self.log_file_name = log_file_name
 
         if os.path.isdir(self.track_path):
             for file in os.listdir(self.track_path):
@@ -225,7 +225,3 @@ class WebTracker:
         except requests.exceptions.RequestException:
             self.log("Request Error")
             os._exit(-1)
-
-
-def tracker():
-    return WebTracker()
