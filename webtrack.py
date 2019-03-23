@@ -191,7 +191,7 @@ class WebTracker:
                     track_file = open(os.path.join(self.track_path, site_id + ".txt"))
 
                     message = "'" + site_id + "' has changed\n"
-                    for line in difflib.unified_diff(res.splitlines(keepends=True), track_file.readlines(), n=2):
+                    for line in difflib.unified_diff(track_file.readlines(), res.splitlines(keepends=True), n=2):
                         message = message + line
                     message = message[:-1]  # Remove final newline
 
