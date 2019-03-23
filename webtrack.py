@@ -7,6 +7,8 @@ import time
 import json
 import difflib
 
+import utils
+
 
 class WebTracker:
 
@@ -73,28 +75,6 @@ class WebTracker:
         soup = BeautifulSoup(page.content, 'html.parser')
         return soup
 
-    @staticmethod
-    def get_payload(form):
-        inputs = form.find_all('input')
-        payload = {}
-        for input_element in inputs:
-            if input_element.has_attr('value'):
-                payload[input_element['name']] = input_element['value']
-        return payload
-
-    @staticmethod
-    def override_payload(payload, override):
-        for k, v in override.items():
-            payload[k] = v
-
-    @staticmethod
-    def decode(value, dictionary):
-        rep = re.findall('\\[(.*?)\\]', value)
-        for item in rep:
-            if dictionary.get(item):
-                value = value.replace("["+item+"]", dictionary[item])
-        return value
-
     def check_json(self, filename):
         try:
             with open(filename) as file:
@@ -121,10 +101,10 @@ class WebTracker:
                                 res = self.post(step["param"], payload, verify=verify_ssl)
                                 page = BeautifulSoup(res.text, 'html.parser')
                             elif step["command"].lower() == 'select_form':
-                                payload = self.get_payload(page.select_one(step["param"]))
+                                payload = utils.get_payload(page.select_one(step["param"]))
                             elif step["command"].lower() == 'override_payload':
                                 for payload_key, payload_value in step["param"].items():
-                                    payload[self.decode(payload_key, payload)] = self.decode(payload_value, payload)
+                                    payload[utils.decode(payload_key, payload)] = utils.decode(payload_value, payload)
 
                         if login["verify_login"] in page.contents:
                             is_logged_in[login_id] = False
