@@ -47,10 +47,13 @@ class WebTracker:
         print(message)
 
     def get_hash_for_file(self, filename):
-        hasher = hashlib.md5()
         with open(os.path.join(self.track_path, filename), 'rb') as file:
-            buf = file.read()
-            hasher.update(buf)
+            return self.get_hash(file.read())
+
+    @staticmethod
+    def get_hash(text):
+        hasher = hashlib.md5()
+        hasher.update(text)
         return hasher.hexdigest()
 
     def start_session(self):
@@ -196,9 +199,7 @@ class WebTracker:
                     rm.decompose()
 
             res = re.sub(r'\n+', '\n', body.get_text('\n').replace('\t', ''))
-            hasher = hashlib.md5()
-            hasher.update(res.encode('utf-8'))
-            new_hash = hasher.hexdigest()
+            new_hash = self.get_hash(res.encode('utf-8'))
 
             if site_id in self.hashes:
                 if self.hashes[site_id] != new_hash:
