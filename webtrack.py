@@ -84,9 +84,9 @@ class WebTracker:
                 json_file = json.load(file)
 
                 mails = []
-                if self.email_notify:
-                    if "mails" in json_file:
-                        mails = json_file["mails"]
+                if self.email_notify and "notify" in json_file:
+                    if "mails" in json_file["notify"]:
+                        mails = json_file["notify"]["mails"]
 
                 logins = json_file["login"]
                 for login in logins:

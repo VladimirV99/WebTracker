@@ -1,4 +1,7 @@
 {
+	"notify": {
+		"mails": [ "my@gmail.com" ]
+	},
 	"login": [
 		{
 			"id": "example_login",
