@@ -26,7 +26,8 @@ def parse_args():
 def start_tracking(file, check_time):
     tracker.start_session()
     while True:
-        tracker.check_json(file)
+        if not tracker.check_json(file):
+            os._exit(1)
         time.sleep(check_time)
 
 

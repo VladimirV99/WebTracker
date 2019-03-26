@@ -91,87 +91,106 @@ class WebTracker:
                     if "mails" in json_file["notify"]:
                         mails = json_file["notify"]["mails"]
 
-                logins = json_file["login"]
-                for login in logins:
-                    try:
-                        login_id = login["id"]
-                        is_logged_in[login_id] = False
-                        verify_ssl = True
-                        page = None
-                        payload = None
-
-                        for step in login["steps"]:
-                            if step["command"].lower() == 'verify_ssl':
-                                if step["param"].lower() == 'true':
-                                    verify_ssl = True
-                                else:
-                                    verify_ssl = False
-                            elif step["command"].lower() == 'get':
-                                page = self.get_soup(step["param"], verify=verify_ssl)
-                            elif step["command"].lower() == 'post':
-                                res = self.post(step["param"], payload, verify=verify_ssl)
-                                page = BeautifulSoup(res.text, 'html.parser')
-                            elif step["command"].lower() == 'select_form':
-                                payload = utils.get_payload(page.select_one(step["param"]))
-                            elif step["command"].lower() == 'override_payload':
-                                for payload_key, payload_value in step["param"].items():
-                                    payload[utils.decode(payload_key, payload)] = utils.decode(payload_value, payload)
-
-                        if login["verify_login"] in page.contents:
-                            is_logged_in[login_id] = False
-                        else:
-                            is_logged_in[login_id] = True
-                    except KeyError:
-                        self.log("Missing key for login, skipping")
-                        continue
-                    except requests.exceptions.SSLError:
-                        self.log("SSLError, stopping")
-                        os._exit(-1)
-                sites = json_file["sites"]
-                for site in sites:
-                    try:
-                        site_id = site["id"]
-                        if site.get("require"):
-                            if not is_logged_in[site["requires"].strip()]:
-                                self.log("Missing required login '" + site["requires"].strip() + "' for " + site_id)
+                if "login" in json_file:
+                    logins = json_file["login"]
+                    for login in logins:
+                        try:
+                            if "id" not in login:
+                                self.log("Login has no id. Skipping")
                                 continue
-                        url = site["url"]
-                        select_element = 'body'
-                        if site.get("select_element"):
-                            select_element = site["select_element"]
-                        select_attrs = None
-                        if site.get("select_attrs"):
-                            select_attrs = site["select_attrs"]
-                        remove_ids = None
-                        if site.get("remove_ids"):
-                            remove_ids = site["remove_ids"]
-                        remove_classes = None
-                        if site.get("remove_classes"):
-                            remove_classes = site["remove_classes"]
-                        verify = site["verify_ssl"]
-                        if verify.lower() == 'true':
+                            login_id = login["id"]
+                            is_logged_in[login_id] = False
+                            verify_ssl = True
+                            page = None
+                            payload = None
+
+                            for step in login["steps"]:
+                                if "command" not in step:
+                                    self.log("Missing command in login '" + login_id + "'. Skipping")
+                                    continue
+
+                                if step["command"].lower() == 'verify_ssl':
+                                    if step["param"].lower() == 'false':
+                                        verify_ssl = False
+                                elif step["command"].lower() == 'get':
+                                    page = self.get_soup(step["param"], verify=verify_ssl)
+                                elif step["command"].lower() == 'post':
+                                    res = self.post(step["param"], payload, verify=verify_ssl)
+                                    page = BeautifulSoup(res.text, 'html.parser')
+                                elif step["command"].lower() == 'select_form':
+                                    payload = utils.get_payload(page.select_one(step["param"]))
+                                elif step["command"].lower() == 'override_payload':
+                                    for payload_key, payload_value in step["param"].items():
+                                        payload[utils.decode(payload_key, payload)] = utils.decode(payload_value, payload)
+
+                            if "verify_login" in login:
+                                if login["verify_login"] in page.contents:
+                                    is_logged_in[login_id] = False
+                                else:
+                                    is_logged_in[login_id] = True
+                            else:
+                                is_logged_in[login_id] = True
+                                self.log("Warning. Can't confirm login '" + login_id + "'. Assuming success")
+                        except KeyError:
+                            self.log("Missing key for login. Skipping")
+                            continue
+                        except requests.exceptions.SSLError:
+                            self.log("SSLError, stopping")
+                            return False
+
+                if "sites" in json_file:
+                    sites = json_file["sites"]
+                    for site in sites:
+                        try:
+                            if "id" not in site:
+                                self.log("Site has no id, it can't be tracked. Skipping")
+                                continue
+                            site_id = site["id"]
+
+                            if "requires" in site:
+                                if not is_logged_in[site["requires"].strip()]:
+                                    self.log("Missing required login '" + site["requires"].strip() + "' for " + site_id)
+                                    continue
+
+                            if "url" not in site:
+                                self.log("Missing url for '" + site_id + "'. Skipping")
+                                continue
+                            url = site["url"]
+
+                            select_element = site.get("select_element", "body")
+                            select_attrs = site.get("select_attrs")
+                            remove_ids = site.get("remove_ids")
+                            remove_classes = site.get("remove_classes")
+
                             verify = True
-                        else:
-                            verify = False
+                            if "verify_ssl" in site and site["verify_ssl"].lower() == "false":
+                                verify = False
 
-                        diff = self.track(site_id, url, select_element, select_attrs, remove_ids, remove_classes, verify)
-                        if diff is not None:
-                            diffs[site_id] = diff
+                            status, diff = self.track(site_id, url, select_element, select_attrs, remove_ids, remove_classes, verify)
+                            if not status:
+                                return False
+                            if diff is not None:
+                                diffs[site_id] = diff
 
-                    except KeyError:
-                        self.log("Missing key, skipping")
-                        continue
-                    except requests.exceptions.SSLError:
-                        self.log("SSLError, stopping")
-                        os._exit(-1)
+                        except KeyError:
+                            self.log("Missing key. Skipping")
+                            continue
+                        except requests.exceptions.SSLError:
+                            self.log("SSLError. Stopping")
+                            return False
+                else:
+                    self.log("No sites to track. Exiting")
+                    return False
+
             if self.email_notify:
                 utils.notify(mails, diffs)
         except FileNotFoundError:
             self.log("File Not Found: " + filename)
-            os._exit(-1)
+            return False
         except json.JSONDecodeError:
             self.log("Malformed JSON File " + filename)
-            os._exit(-1)
+            return False
+        return True
 
     def write_track_file(self, site_id, data):
         file = open(os.path.join(self.track_path, site_id + ".txt"), "w")
@@ -217,11 +236,11 @@ class WebTracker:
                     self.hashes[site_id] = new_hash
                     self.write_track_file(site_id, res)
 
-                    return diff
+                    return True, diff
             else:
                 self.hashes[site_id] = new_hash
                 self.write_track_file(site_id, res)
         except requests.exceptions.RequestException:
             self.log("Request Error")
-            os._exit(-1)
-        return None
+            return False, None
+        return True, None
