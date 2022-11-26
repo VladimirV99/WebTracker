@@ -1,12 +1,18 @@
 {
 	"notify": {
-		"mails": [ "my@gmail.com" ]
+		"sender": {
+			"smtp_host": "smtp.gmail.com",
+			"smtp_port": 587,
+			"email": "example@gmail.com",
+			"password": "password"
+		},
+		"recipients": [ "user@gmail.com" ]
 	},
 	"login": [
 		{
 			"id": "example_login",
 			"steps": [
-				{ "command": "verify_ssl", "param": "false" },
+				{ "command": "verify_ssl", "param": false },
 				{ "command": "get", "param": "https://www.example.com/login.php"},
 				{ "command": "select_form", "param": "form" },
 				{ "command": "override_payload", "param": {
@@ -19,16 +25,23 @@
 			"verify_login": "Login Failed"
 		}
 	],
-	"sites":[
+	"sites": [
 		{
 			"id": "example",
 			"requires": "example_login",
-			"verify_ssl": "false",
+			"verify_ssl": true,
+			"select_element": "div",
+			"select_attrs": {
+				"attr": "value"
+			},
 			"remove_ids": [
 				"id_to_remove"
 			],
 			"remove_classes": [
 				"class_to_remove"
+			],
+			"remove_attrs": [
+				{ "attr": "value" }
 			],
 			"url": "https://www.example.com/dashboard.php"
 		}

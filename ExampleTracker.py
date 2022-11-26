@@ -1,41 +1,36 @@
 import requests
-import threading
 import time
 import webtrack
+import utils
 
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-check_time = 15*60  # 15 Minutes
-tracker = webtrack.tracker()
-
 
 def start_tracking():
+    check_time = 15 * 60  # 15 Minutes
+    tracker = webtrack.WebTracker()
     tracker.start_session()
 
     while True:
-        example_site = tracker.get_soup('https://www.example.com/login.php', verify=False)
-        example_payload = tracker.get_payload(example_site.find('form'))
-        tracker.override_payload(example_payload, {'username': 'admin', 'password': 'pass'})
-        tracker.post('https://www.example.com/login.php', example_payload, verify=False)
+        example_site = tracker.get_soup('https://www.example.com/login.php')
+        example_payload = utils.get_payload(example_site.find('form'))
+        utils.override_payload(example_payload, {'username': 'admin', 'password': 'pass'})
+        tracker.post('https://www.example.com/login.php', example_payload)
 
-        tracker.track(site_id='example', url='https://www.example.com/dashboard.php', verify=False)
+        status, diff = tracker.track(site_id='example', url='https://www.example.com/dashboard.php')
+        if not status:
+            utils.notify("Tracker crashed")
+            break
 
         time.sleep(check_time)
 
 
 def main():
-    t = threading.Thread(target=start_tracking, args=())
-    t.setDaemon(True)
-    t.start()
-
-    while True:
-        try:
-            command = input()
-            if command == "exit":
-                exit(0)
-        except KeyboardInterrupt:
-            print("\nStopping tracker")
-            exit(0)
+    try:
+        start_tracking()
+    except KeyboardInterrupt:
+        print("\nStopping tracker")
+        exit(0)
 
 
 main()
